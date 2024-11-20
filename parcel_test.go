@@ -33,9 +33,7 @@ func getTestParcel() Parcel {
 func TestAddGetDelete(t *testing.T) {
 	// prepare
 	db, err := sql.Open("sqlite", "tracker.db") // настройте подключение к БД
-	if err != nil {
-		require.NoError(t, err)
-	}
+	require.NoError(t, err)
 	defer db.Close()
 
 	store := NewParcelStore(db)
@@ -66,16 +64,15 @@ func TestAddGetDelete(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = store.Get(id)
-	require.Equal(t, sql.ErrNoRows, err)
+	require.Error(t, err)
+	assert.ErrorIs(t, sql.ErrNoRows, err)
 }
 
 // TestSetAddress проверяет обновление адреса
 func TestSetAddress(t *testing.T) {
 	// prepare
 	db, err := sql.Open("sqlite", "tracker.db") // настройте подключение к БД
-	if err != nil {
-		require.NoError(t, err)
-	}
+	require.NoError(t, err)
 	defer db.Close()
 
 	store := NewParcelStore(db)
@@ -108,9 +105,7 @@ func TestSetAddress(t *testing.T) {
 func TestSetStatus(t *testing.T) {
 	// prepare
 	db, err := sql.Open("sqlite", "tracker.db") // настройте подключение к БД
-	if err != nil {
-		require.NoError(t, err)
-	}
+	require.NoError(t, err)
 	defer db.Close()
 
 	store := NewParcelStore(db)
@@ -135,16 +130,15 @@ func TestSetStatus(t *testing.T) {
 	// получите добавленную посылку и убедитесь, что статус обновился
 	st, err := store.Get(parcel.Number)
 
-	require.Equal(t, st.Status, new_status)
+	require.NoError(t, err)
+	assert.Equal(t, st.Status, new_status)
 }
 
 // TestGetByClient проверяет получение посылок по идентификатору клиента
 func TestGetByClient(t *testing.T) {
 	// prepare
 	db, err := sql.Open("sqlite", "tracker.db") // настройте подключение к БД
-	if err != nil {
-		require.NoError(t, err)
-	}
+	require.NoError(t, err)
 	defer db.Close()
 
 	store := NewParcelStore(db)
@@ -183,18 +177,26 @@ func TestGetByClient(t *testing.T) {
 	// убедитесь в отсутствии ошибки
 	require.NoError(t, err)
 	// убедитесь, что количество полученных посылок совпадает с количеством добавленных
-	require.Equal(t, len(parcels), len(storedParcels))
+	assert.Len(t, storedParcels, len(parcels))
 
 	// check
-	for _, parcel := range storedParcels {
-		// в parcelMap лежат добавленные посылки, ключ - идентификатор посылки, значение - сама посылка
-		mapParcel := parcelMap[parcel.Number]
+	// в parcelMap лежат добавленные посылки, ключ - идентификатор посылки, значение - сама посылка
+	// убедитесь, что все посылки из storedParcels есть в parcelMap
+	// убедитесь, что значения полей полученных посылок заполнены верно
+	//for _, parcel := range storedParcels {
 
-		// убедитесь, что все посылки из storedParcels есть в parcelMap
-		require.NotEmpty(t, mapParcel)
+	//	mapParcel := parcelMap[parcel.Number]
+	//	assert.NotEmpty(t, mapParcel)
+	//	assert.Equal(t, mapParcel, parcel)
+	//}
 
-		// убедитесь, что значения полей полученных посылок заполнены верно
-		assert.Equal(t, mapParcel, parcel)
-
+	// убедитесь, что значения полей полученных посылок заполнены верно
+	parcel := []Parcel{}
+	for _, v := range parcelMap {
+		parcel = append(parcel, v)
 	}
+	assert.ElementsMatch(t, storedParcels, parcel)
+
+	//ДЛЯ РЕВЬЮВЕРА - не понимаю смысла отказа от цикла, если мы все равно мапу в массив можем преобразовать только через цикл
+	//P.S. Цикл был изначально прописан в задании)
 }
